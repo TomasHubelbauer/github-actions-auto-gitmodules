@@ -12,7 +12,7 @@ jobs:
       - name: Run `test -f .gitmodules`
         run: test -f .gitmodules && echo ".gitmodules exists" || echo ".gitmodules does not exist"
 
-      - name: Print discovered submodules using approach 1
+      - name: Run `git config --file .gitmodules --name-only --list`
         run: test -f .gitmodules && git config --file .gitmodules --name-only --list || echo ".gitmodules does not exist"
       
       - name: Run `git submodule status`
@@ -24,8 +24,8 @@ jobs:
       - name: Run `ls .git/modules`
         run: test -d .git/modules && ls .git/modules || echo ".git/modules does not exist"
 
-      - name: Run `git config --list --name-only | grep "^submodule\..*\.url$"`
-        run: git config --list --name-only | grep "^submodule\..*\.url$" | cut -c 11- | rev | cut -c 5- | rev
+      - name: Run `git config --name-only --list | grep "^submodule\..*\.url$"`
+        run: git config --name-only --list | grep "^submodule\..*\.url$" | cut -c 11- | rev | cut -c 5- | rev
 
       - name: Sync submodules
         run: git submodule update --recursive --remote
