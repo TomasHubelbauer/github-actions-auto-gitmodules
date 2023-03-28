@@ -19,11 +19,11 @@ jobs:
       - name: Run `git submodule status`
         run: git submodule status
       
-      - name: Run `test -f .gitmodules`
+      - name: Run `test -d .git/modules`
         run: test -d .git/modules && echo ".git/modules exists" || echo ".git/modules does not exist"
 
       - name: Run `ls .git/modules`
-        run: ls .git/modules
+        run: test -d .git/modules && ls .git/modules || echo ".git/modules does not exist"
 
       - name: Run `git config --list --name-only | grep "^submodule\..*\.url$"`
         run: git config --list --name-only | grep "^submodule\..*\.url$" | cut -c 11- | rev | cut -c 5- | rev
