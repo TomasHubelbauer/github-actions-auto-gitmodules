@@ -12,9 +12,8 @@ jobs:
       - name: Run `test -f .gitmodules`
         run: test -f .gitmodules && echo ".gitmodules exists" || echo ".gitmodules does not exist"
 
-      # TODO: Figure out why this runs and exits with code 1 despite `test`
-      # - name: Print discovered submodules using approach 1
-      #   run: test -f .gitmodules && git config --file .gitmodules --name-only --get-regexp path
+      - name: Print discovered submodules using approach 1
+        run: test -f .gitmodules && git config --file .gitmodules --name-only --list || echo ".gitmodules does not exist"
       
       - name: Run `git submodule status`
         run: git submodule status
