@@ -6,6 +6,8 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@main
+        with:
+          submodules: true
       
       - name: Run `test -f .gitmodules`
         run: test -f .gitmodules && echo ".gitmodules exists" || echo ".gitmodules does not exist"
@@ -17,6 +19,9 @@ jobs:
       - name: Run `git submodule status`
         run: git submodule status
       
+      - name: Run `test -f .gitmodules`
+        run: test -d .git/modules && echo ".git/modules exists" || echo ".git/modules does not exist"
+
       - name: Run `ls .git/modules`
         run: ls .git/modules
 
