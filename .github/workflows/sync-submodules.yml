@@ -7,7 +7,7 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@main
       - name: Print discovered submodules using approach 1
-        run: git config --file .gitmodules --name-only --get-regexp path
+        run: test .gitmodules && git config --file .gitmodules --name-only --get-regexp path
       - name: Print discovered submodules using approach 2
         run: git submodule status
       - name: Sync submodules
