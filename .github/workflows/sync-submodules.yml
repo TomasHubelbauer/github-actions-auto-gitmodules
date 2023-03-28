@@ -7,13 +7,22 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@main
       
+      - name: Run `test -f .gitmodules`
+        run: test -f .gitmodules && echo ".gitmodules exists" || echo ".gitmodules does not exist"
+
       # TODO: Figure out why this runs and exits with code 1 despite `test`
       # - name: Print discovered submodules using approach 1
       #   run: test -f .gitmodules && git config --file .gitmodules --name-only --get-regexp path
       
-      - name: Print discovered submodules using approach 2
+      - name: Run `git submodule status`
         run: git submodule status
       
+      - name: Run `ls .git/modules`
+        run: ls .git/modules
+
+      - name: Run `git config --list --name-only | grep "^submodule\..*\.url$"`
+        run: git config --list --name-only | grep "^submodule\..*\.url$" | cut -c 11- | rev | cut -c 5- | rev
+
       - name: Sync submodules
         run: git submodule update --recursive --remote
       

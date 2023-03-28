@@ -18,11 +18,21 @@ submodule.
 To remove a submodule, this is the command to use:
 
 ```sh
-git rm git-demo-submodule
+# Remove the directory of the submodule repository
+# Use `--cached` in case the submodule directory was not committed yet
+git rm --cached git-demo-submodule
+
+# Remove the directory of the submodule directory in `.git/modules`
+rm -rf .git/modules/git-demo-submodule
+
+# Remove the entry of the submodule in `.git/config`
+git config --remove-section submodule.git-demo-submodule
 ```
 
-The source for this command can be found on Stack Overflow here:
-https://stackoverflow.com/a/1260982/2715716
+Sources off Stack Overflow:
+
+- https://stackoverflow.com/a/1260982/2715716
+- https://stackoverflow.com/a/35778105/2715716
 
 You can add `-f` if the submodule addition has not been committed yet or the
 submodule has changes.
