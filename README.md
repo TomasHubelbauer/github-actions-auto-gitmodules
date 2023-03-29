@@ -5,22 +5,26 @@ It can be used to link another repository as a dependency of the current one.
 
 Here is the documentation: https://git-scm.com/book/en/v2/Git-Tools-Submodules
 
-Here's how you add a submodule to a repository:
+## Adding a submodule
 
 ```sh
 git submodule add https://github.com/TomasHubelbauer/git-demo-submodule
 ```
 
-This will clone the linked repository into a directory named after it and it
-will create or update a file name `.gitmodules` with the details of the new
-submodule.
+This will:
 
-To remove a submodule, this is the command to use:
+- Clone the linked repository into a directory named after it
+- Create a directory in `.git/modules` for the submodule
+- Update the `.git/config` file to add a new `submodule` section
+- Create or update a file name `.gitmodules`
+
+## Removing a submodule
 
 ```sh
 # Remove the directory of the submodule repository
 # Use `--cached` in case the submodule directory was not committed yet
-git rm --cached git-demo-submodule
+# Use `--force` if the submodule has changes that have not been committed yet
+git rm git-demo-submodule
 
 # Remove the directory of the submodule directory in `.git/modules`
 rm -rf .git/modules/git-demo-submodule
@@ -29,52 +33,64 @@ rm -rf .git/modules/git-demo-submodule
 git config --remove-section submodule.git-demo-submodule
 ```
 
-Sources off Stack Overflow:
+Sources:
 
 - https://stackoverflow.com/a/1260982/2715716
 - https://stackoverflow.com/a/35778105/2715716
 
-You can add `-f` if the submodule addition has not been committed yet or the
-submodule has changes.
+## Checking out with submodules
 
-To check out or pull a repository with all its submodules, one must use these
-commands:
+Clone with submodules:
 
 ```sh
+# Add `--remote-submodules` to also update the submodules to latest
 git clone https://github.com/TomasHubelbauer/github-actions-auto-gitmodules --recurse-submodules
 ```
 
-Adding `--remote-submodules` will also update submodules to latest.
+Update submodules:
 
 ```sh
-git submodule update --recursive --remote
+# Add `--remote` to update the submodule to latest
+git submodule update --recursive
 ```
 
-The idea of this GitHub Actions workflow is to add logic which runs on every
-push and checks for updates into `.gitmodules` made by the user in the GitHub
-web UI and then add or remove submodules to match the changes made by the user
-and push the changes from the workflow back to the repository.
+## This workflow idea
 
-1. Run `git submodule update --recursive --remote`
-2. See if there is a change and if so, push it
+This workflow's purpose is to make it possible to add and remove submodules from
+a repository just by editing the `.gitmodules` file in the GitHub web editor and
+having the workflow do the rest.
 
-This alone should add submodules that users add by hand, I think.
-But I don't think it will remove submodules if the user does that by hand.
-For that, we need to list the submodules we should be seeing:
+This will prevent the need to check out the repository in order to add or remove
+submodules from it.
 
-`git config --file .gitmodules --name-only --get-regexp path` or maybe just
-`git submodule status` will work?
+To achieve this, the workflow will run on pushes and see if the state of the
+submodules file matches the expected contents of the `.git/modules` folder and
+the `.git/config` submodule sections.
 
-And then we need to walk the directories in the repository and probably just
-look for `.git` in them?
+Additions will probably be easy enough to do just by running the submodule
+update command which I think should add the submodules' components to the config
+file and the `.git/modules` directory after they've been added to the modules
+file.
 
-Or maybe the deletion in `.submodules` and the subsequent push and submodule
-update on the CI will mean that the previously submodule directories are now
-just normal directories so they will show up as additions and at the same time
-the commit triggering the CI run will be just deletions in the `.gitmodules`
-file?
-But this sounds pretty janky so I think I will go with the former.
+`git submodule update --recursive --remote`
 
-This should also run on schedule every hour or something so that `--remote`
-results in submodules that were changed in their original repos to update in
-this repository as well!
+Removals might get trickier as the update won't remove the other files/folders
+if the submodule is removed from the modules file.
+To make this work, likely the workflow will need to list both the modules file
+entries and the config file entries, `.git/modules` subdirectories and the repo
+directories, diff the sets and recognize what it needs to delete:
+
+- List all entries in `.gitmodules`
+- Remove all directories in `.git/modules` that do not have a match
+- Remove all submodule sections in `.git/config` which do not have a match
+- Remove all repository directories associated with the above removed entries
+
+We'll also do this for additions if the simple submodule update idea as per the
+above doesn't work.
+
+After every push, if changes were generated resulting from the submodule changes
+then we commit them and push them back to the workflow repository.
+
+We'll also have the workflow run on schedule because the use of `--remote` means
+even if no submodules were added or removed, they might have still updated and
+we need to notice that, commit it and push it to the workflow repository, too.
