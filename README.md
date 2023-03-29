@@ -94,3 +94,11 @@ then we commit them and push them back to the workflow repository.
 We'll also have the workflow run on schedule because the use of `--remote` means
 even if no submodules were added or removed, they might have still updated and
 we need to notice that, commit it and push it to the workflow repository, too.
+
+## Draft area
+
+- Checking out with submodules after removing `.gitmodules` only but not the
+  corresponding other entries causes an error and exits with code 128:
+  > fatal: No url found for submodule path
+  - We might need to always check out without submodules, process the changes
+    first and then try checking out submodules one by one or someting?
