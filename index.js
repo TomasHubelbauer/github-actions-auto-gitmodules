@@ -34,7 +34,7 @@ for (const dotGitmodule of dotGitmodules) {
 
   const dotGitModule = dotGitModules.find(dotGitModule => dotGitModule === dotGitmodule.path);
   if (!dotGitModule) {
-    const { stdout, stderr } = await exec(`git submodule add ${dotGitmodule.url} --progress`);
+    const { stdout, stderr } = await exec(`git submodule add ${dotGitmodule.url}`);
     if (stderr) {
       throw new Error(stderr);
     }
