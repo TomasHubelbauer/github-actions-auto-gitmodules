@@ -18,16 +18,43 @@ for (const path of gitLsFiles) {
   console.log(`\t${path}`);
 }
 
+// Remove submodule directories removed from `.gitmodules` but not by the Git command
+for (const gitLsFile of gitLsFiles) {
+  const dotGitmodule = dotGitmodules.find(dotGitmodule => dotGitmodule.path === gitLsFile);
+  if (!dotGitmodule) {
+    const stdout = await runCommand(`git rm --cached ${gitLsFile}`);
+    console.log(`Removed submodule ${gitLsFile} from index because it is not in .gitmodules: ${stdout}`);
+  }
+}
+
 const dotGitModules = await drainAsyncGenerator(parseDotGitModulesDirectory());
 console.log('.git/modules:');
 for (const path of dotGitModules) {
   console.log(`\t${path}`);
 }
 
+// Remove bits of submodules removed from `.gitmodules` but not by the Git command
+for (const dotGitModule of dotGitModules) {
+  const dotGitmodule = dotGitmodules.find(dotGitmodule => dotGitmodule.path === dotGitModule);
+  if (!dotGitmodule) {
+    await fs.promises.rm(`.git/modules/${dotGitModule}`, { recursive: true });
+    console.log(`Removed submodule ${dotGitModule} from .git/modules because it is not in .gitmodules.`);
+  }
+}
+
 const dotGitConfig = await drainAsyncGenerator(parseDotGitConfigFile());
 console.log('.git/config:');
 for (const { name, url, active } of dotGitConfig) {
   console.log(`\t${name}: ${url} (${active ? 'active' : 'inactive'})`);
+}
+
+// Remove sections of submodules removed from `.gitmodules` but not by the Git command
+for (const { name } of dotGitConfig) {
+  const dotGitmodule = dotGitmodules.find(dotGitmodule => dotGitmodule.name === name);
+  if (!dotGitmodule) {
+    const stdout = await runCommand(`git config --remove-section submodule.${name}`);
+    console.log(`Removed submodule ${name} from .git/config because it is not in .gitmodules: ${stdout}`);
+  }
 }
 
 // Install submodules added by name to `.gitmodules` not added by the Git command
@@ -53,31 +80,5 @@ for (const dotGitmodule of dotGitmodules) {
 
   if (!active) {
     throw new Error(`Submodule ${name} is not active.`);
-  }
-}
-
-// Remove submodule directories removed from `.gitmodules` but not by the Git command
-for (const gitLsFile of gitLsFiles) {
-  const dotGitmodule = dotGitmodules.find(dotGitmodule => dotGitmodule.path === gitLsFile);
-  if (!dotGitmodule) {
-    const stdout = await runCommand(`git rm --cached ${gitLsFile}`);
-    console.log(`Removed submodule ${gitLsFile} from index because it is not in .gitmodules: ${stdout}`);
-  }
-}
-
-// Remove bits of submodules removed from `.gitmodules` but not by the Git command
-for (const dotGitModule of dotGitModules) {
-  const dotGitmodule = dotGitmodules.find(dotGitmodule => dotGitmodule.path === dotGitModule);
-  if (!dotGitmodule) {
-    await fs.promises.rm(`.git/modules/${dotGitModule}`, { recursive: true });
-    console.log(`Removed submodule ${dotGitModule} from .git/modules because it is not in .gitmodules.`);
-  }
-}
-
-for (const { name } of dotGitConfig) {
-  const dotGitmodule = dotGitmodules.find(dotGitmodule => dotGitmodule.name === name);
-  if (!dotGitmodule) {
-    const stdout = await runCommand(`git config --remove-section submodule.${name}`);
-    console.log(`Removed submodule ${name} from .git/config because it is not in .gitmodules: ${stdout}`);
   }
 }
