@@ -1,17 +1,21 @@
 import fs from 'fs';
-import child_process from 'child_process';
-import util from 'util';
 import drainAsyncGenerator from './drainAsyncGenerator.js';
 import parseDotGitmodulesFile from './parseDotGitmodulesFile.js';
 import parseDotGitModulesDirectory from './parseDotGitModulesDirectory.js';
 import parseDotGitConfigFile from './parseDotGitConfigFile.js';
-
-const exec = util.promisify(child_process.exec);
+import parseGitLsFilesCommand from './parseGitLsFilesCommand.js';
+import runCommand from './runCommand.js';
 
 const dotGitmodules = await drainAsyncGenerator(parseDotGitmodulesFile());
 console.log('.gitmodules:');
 for (const { name, path, url } of dotGitmodules) {
   console.log(`\t${name} (${path}): ${url}`);
+}
+
+const gitLsFiles = await drainAsyncGenerator(parseGitLsFilesCommand());
+console.log('git ls-files:');
+for (const path of gitLsFiles) {
+  console.log(`\t${path}`);
 }
 
 const dotGitModules = await drainAsyncGenerator(parseDotGitModulesDirectory());
@@ -34,11 +38,7 @@ for (const dotGitmodule of dotGitmodules) {
 
   const dotGitModule = dotGitModules.find(dotGitModule => dotGitModule === dotGitmodule.path);
   if (!dotGitModule) {
-    const { stdout, stderr } = await exec(`git submodule add ${dotGitmodule.url}`);
-    if (stderr) {
-      throw new Error(stderr);
-    }
-
+    const stdout = await runCommand(`git submodule add ${dotGitmodule.url}`);
     console.log(`Added submodule ${dotGitmodule.name} to .git/modules because it is not in .git/modules: ${stdout}`);
   }
 
@@ -56,17 +56,19 @@ for (const dotGitmodule of dotGitmodules) {
   }
 }
 
+// Remove submodule directories removed from `.gitmodules` but not by the Git command
+for (const gitLsFile of gitLsFiles) {
+  const dotGitmodule = dotGitmodules.find(dotGitmodule => dotGitmodule.path === gitLsFile);
+  if (!dotGitmodule) {
+    const stdout = await runCommand(`git rm --cached ${gitLsFile}`);
+    console.log(`Removed submodule ${gitLsFile} from index because it is not in .gitmodules: ${stdout}`);
+  }
+}
+
 // Remove bits of submodules removed from `.gitmodules` but not by the Git command
 for (const dotGitModule of dotGitModules) {
   const dotGitmodule = dotGitmodules.find(dotGitmodule => dotGitmodule.path === dotGitModule);
   if (!dotGitmodule) {
-    const { stdout, stderr } = await exec(`git rm ${dotGitModule}`);
-    if (stderr) {
-      throw new Error(stderr);
-    }
-
-    console.log(`Removed submodule ${dotGitModule} from index because it is not in .gitmodules: ${stdout}`);
-
     await fs.promises.rm(`.git/modules/${dotGitModule}`, { recursive: true });
     console.log(`Removed submodule ${dotGitModule} from .git/modules because it is not in .gitmodules.`);
   }
@@ -75,11 +77,7 @@ for (const dotGitModule of dotGitModules) {
 for (const { name } of dotGitConfig) {
   const dotGitmodule = dotGitmodules.find(dotGitmodule => dotGitmodule.name === name);
   if (!dotGitmodule) {
-    const { stdout, stderr } = await exec(`git config --remove-section submodule.${name}`);
-    if (stderr) {
-      throw new Error(stderr);
-    }
-
+    const stdout = await runCommand(`git config --remove-section submodule.${name}`);
     console.log(`Removed submodule ${name} from .git/config because it is not in .gitmodules: ${stdout}`);
   }
 }
