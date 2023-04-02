@@ -102,3 +102,13 @@ we need to notice that, commit it and push it to the workflow repository, too.
   > fatal: No url found for submodule path
   - We might need to always check out without submodules, process the changes
     first and then try checking out submodules one by one or someting?
+
+## Tasks
+
+### Figure out why the push from the workflow is failing with a 403
+
+Is it possible that I've only ever used the push workflow with public repos and
+it doesn't work with private ones and I just never noticed?
+
+Or did I mess something up in it?
+It works for other of my repositories so I need to check it against them.
