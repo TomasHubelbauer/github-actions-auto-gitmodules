@@ -6,20 +6,9 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@main
-        with:
-          submodules: true
-      
-      - name: Run `git submodule status`
-        run: git submodule status
-            
-      - name: Run `git config --file .gitmodules --name-only --list`
-        run: test -f .gitmodules && echo ".gitmodules exists:" && git config --file .gitmodules --name-only --list | grep "^submodule\..*\.url$" | cut -c 11- | rev | cut -c 5- | rev || echo ".gitmodules does not exist"
-      
-      - name: Run `ls .git/modules`
-        run: test -d .git/modules && echo ".git/modules exists:" && ls .git/modules || echo ".git/modules does not exist"
 
-      - name: Run `git config --name-only --list | grep "^submodule\..*\.url$"`
-        run: git config --name-only --list | grep "^submodule\..*\.url$" | cut -c 11- | rev | cut -c 5- | rev
+      - name: Run the script
+        run: node .
 
       - name: Sync submodules
         run: git submodule update --recursive --remote
