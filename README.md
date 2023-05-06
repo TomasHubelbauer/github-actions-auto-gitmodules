@@ -121,3 +121,12 @@ It works for other of my repositories so I need to check it against them.
 
 I have introduced this check in the test but it should happen in the main script
 when running outside of the script context as well.
+
+### Use Environment Files instead of the `set-output` command in the workflow
+
+I am getting this warning in the _Bail if there are no changes staged to commit_
+step now:
+
+> Warning: The `set-output` command is deprecated and will be disabled soon.
+> Please upgrade to using Environment Files. For more information see:
+> https://github.blog/changelog/2022-10-11-github-actions-deprecating-save-state-and-set-output-commands/
