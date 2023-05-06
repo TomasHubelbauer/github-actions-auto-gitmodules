@@ -33,8 +33,10 @@ test('add submodule', async () => {
 
   // Turn the directory into a Git repository
   assert.match(
-    await runCommand('git init'),
-    /^Initialized empty Git repository in .*\/super\/.git\/\n$/
+    // Note that `init.defaultBranch` is there for GitHub Actions where this
+    // config doesn't seem to be the default in Git - it is not needed locally
+    await runCommand('git -c init.defaultBranch main init'),
+    /^Initialized empty Git repository in .*?\/super\/.git\/\n$/
   );
 
   // Assert the `.gitmodules` file is empty (does not exist)
@@ -78,7 +80,9 @@ test('add submodule', async () => {
 
   // Turn the directory into a Git repository
   assert.match(
-    await runCommand('git init'),
+    // Note that `init.defaultBranch` is there for GitHub Actions where this
+    // config doesn't seem to be the default in Git - it is not needed locally
+    await runCommand('git -c init.defaultBranch main init'),
     /^Initialized empty Git repository in .*\/sub\/.git\/\n$/
   );
 
