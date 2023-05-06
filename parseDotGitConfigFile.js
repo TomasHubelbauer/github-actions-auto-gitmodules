@@ -8,7 +8,7 @@ export default async function* parseDotGitConfigFile() {
     text = await fs.promises.readFile('.git/config', 'utf-8');
   }
   catch (error) {
-    if (error.code === 'ENOENT' && error.code === 'EACCES') {
+    if (error.code === 'ENOENT' || error.code === 'EACCES') {
       return;
     }
 
