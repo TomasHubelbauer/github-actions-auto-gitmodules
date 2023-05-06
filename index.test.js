@@ -24,6 +24,13 @@ async function clearStrayDirectories() {
     await fs.promises.rm('sub', { recursive: true });
   }
   catch { }
+
+  // Clean up stray `super.git` folder left in case the test failed on the prior run
+  try {
+    await fs.promises.access('super.git');
+    await fs.promises.rm('super.git', { recursive: true });
+  }
+  catch { }
 }
 
 async function makeSuperRepository() {
@@ -152,6 +159,32 @@ async function addSubmodule() {
     /^ \w{40} sub \(heads\/main\)\n$/
   );
 
+  // Validate the status after adding the submodule
+  assert.match(
+    await runCommand('git status'),
+    /^On branch main\n\nNo commits yet\n\nChanges to be committed:\n  \(use "git rm --cached <file>..." to unstage\)\n\tnew file:   .gitmodules\n\tnew file:   sub\n\n$/
+  );
+
+  // Stage the changes
+  assert.equal(
+    await runCommand('git add *'),
+    ''
+  );
+
+  // Commit the changes
+  assert.match(
+    // Note that `user.name` and `user.email` are there for GitHub Actions where
+    // there is no Git identity set up by default and are not needed locally
+    await runCommand('git -c user.name="Tomas Hubelbauer" -c user.email="tomas@hubelbauer.net" commit -m "Add a submodule" -m "This submodule is added and should check out when later cloned again"'),
+    /^\[main \(root-commit\) \w{7}\] Add a submodule\n 2 files changed, 4 insertions\(\+\)\n create mode 100644 .gitmodules\n create mode 160000 sub\n$/
+  );
+
+  // Validate the status after committing the submodule
+  assert.match(
+    await runCommand('git status'),
+    /^On branch main\nnothing to commit, working tree clean\n$/
+  );
+
   // Go back out from `super` to be able to clean up the two repository folders
   process.chdir('..');
 }
@@ -197,14 +230,42 @@ async function removeSubmodule() {
     ''
   );
 
+  // Validate the status after removing the submodule
+  assert.match(
+    await runCommand('git status'),
+    /^On branch main\nChanges to be committed:\n  \(use "git restore --staged <file>..." to unstage\)\n\tdeleted:    sub\n\nChanges not staged for commit:\n  \(use "git add\/rm <file>..." to update what will be committed\)\n  \(use "git restore <file>..." to discard changes in working directory\)\n\tdeleted:    .gitmodules\n\nUntracked files:\n  \(use "git add <file>..." to include in what will be committed\)\n\tsub\/\n\n/
+  );
+
+  // Stage the changes
+  assert.equal(
+    await runCommand('git add .'),
+    ''
+  );
+
+  // Commit the changes
+  assert.match(
+    // Note that `user.name` and `user.email` are there for GitHub Actions where
+    // there is no Git identity set up by default and are not needed locally
+    await runCommand('git -c user.name="Tomas Hubelbauer" -c user.email="tomas@hubelbauer.net" commit -m "Add a submodule" -m "This submodule is added and should check out when later cloned again"'),
+    /^\[main \w{7}\] Add a submodule\n 3 files changed, 1 insertion\(\+\), 4 deletions\(-\)\n delete mode 100644 .gitmodules\n delete mode 160000 sub\n create mode 100644 sub\/README.md\n$/
+  );
+
+  // Validate the status after committing the submodule removal
+  assert.match(
+    await runCommand('git status'),
+    /^On branch main\nnothing to commit, working tree clean\n$/
+  );
+
   // Go back out from `super` to be able to clean up the two repository folders
   process.chdir('..');
 }
 
-async function clearRepositories() {
+async function clearSuperRepository() {
   // Delete the `super` repository directory
   await fs.promises.rm('super', { recursive: true });
+}
 
+async function clearSubRepository() {
   // Delete the `sub` repository directory
   await fs.promises.rm('sub', { recursive: true });
 }
@@ -214,7 +275,8 @@ test('add submodule', async () => {
   await makeSuperRepository();
   await makeSubRepository();
   await addSubmodule();
-  await clearRepositories();
+  await clearSuperRepository();
+  await clearSubRepository();
 });
 
 test('remove submodule', async () => {
@@ -223,7 +285,47 @@ test('remove submodule', async () => {
   await makeSubRepository();
   await addSubmodule();
   await removeSubmodule();
-  await clearRepositories();
+  await clearSuperRepository();
+  await clearSubRepository();
 });
 
-it.todo('clone with submodules', async () => { });
+test('clone with submodules', async () => {
+  await clearStrayDirectories();
+  await makeSuperRepository();
+  await makeSubRepository();
+  await addSubmodule();
+
+  process.chdir('super');
+
+  assert.equal(
+    await runCommand('git status'),
+    'On branch main\nnothing to commit, working tree clean\n'
+  );
+
+  await fs.promises.cp('.git', '../super.git', { recursive: true });
+
+  process.chdir('..');
+
+  await clearSuperRepository();
+
+  assert.equal(
+    await runCommand('git clone super.git super', 'stderr'),
+    'Cloning into \'super\'...\ndone.\n'
+  );
+
+  process.chdir('super');
+
+  assert.match(
+    await runCommand('git -c protocol.file.allow=always submodule update --init --recursive --remote', 'stdio'),
+    // Submodule path 'sub': checked out '011103a25a48cb9400d45f3415aeb4949b6f8e3c'\n\nSubmodule 'sub' (/Users/tom/Desktop/github-actions-auto-gitmodules/sub) registered for path 'sub'\nCloning into '/Users/tom/Desktop/github-actions-auto-gitmodules/super/sub'...\ndone.\n
+    /^Submodule path 'sub': checked out '\w{40}'\n\nSubmodule 'sub' \(.*?\/sub\) registered for path 'sub'\nCloning into '.*?\/sub'...\ndone.\n$/
+  );
+
+  await fs.promises.access('sub/README.md');
+
+  process.chdir('..');
+
+  await clearSubRepository();
+  await clearSuperRepository();
+  await fs.promises.rm('super.git', { recursive: true });
+});

@@ -6,10 +6,10 @@ const exec = util.promisify(child_process.exec);
 /**
  * 
  * @param {string} command The command to execute
- * @param {*} swapStd Whether to treat stderr (true) or stdout (false) as failure
+ * @param {'stdout' | 'stderr' | 'stdio'} stream The stream to check and return
  * @returns 
  */
-export default async function runCommand(command, swapStd = false) {
+export default async function runCommand(command, stream = 'stdout') {
   /** @type {string} */
   let stdout;
 
@@ -25,9 +25,36 @@ export default async function runCommand(command, swapStd = false) {
     throw new Error(`'${command}' exited with a non-zero exit code ${code}${killed ? ` due to being killed by ${signal}` : ''}.\n\nStandard output:\n${stdout}\n\nStandard error:\n${stderr}`);
   }
 
-  if (swapStd ? stdout : stderr) {
-    throw new Error(`'${command}' exited with code zero with non-empty standard ${swapStd ? 'output' : 'error'}.\n\nStandard output:\n${stdout}\n\nStandard error:\n${stderr}`);
+  /** @type {string} */
+  let stdpos;
+
+  /** @type {string} */
+  let stdneg;
+
+  switch (stream) {
+    case 'stdout': {
+      stdpos = stdout;
+      stdneg = stderr;
+      break;
+    }
+    case 'stderr': {
+      stdpos = stderr;
+      stdneg = stdout;
+      break;
+    }
+    case 'stdio': {
+      stdpos = stdout + '\n' + stderr;
+      stdneg = '';
+      break;
+    }
+    default: {
+      throw new Error(`Invalid stream '${stream}'`);
+    }
   }
 
-  return swapStd ? stderr : stdout;
+  if (stdneg) {
+    throw new Error(`'${command}' exited with code zero with non-empty standard ${stream}.\n\nStandard output:\n${stdout}\n\nStandard error:\n${stderr}`);
+  }
+
+  return stdpos;
 }

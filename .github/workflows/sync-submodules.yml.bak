@@ -14,7 +14,7 @@ jobs:
         run: node .
 
       - name: Sync submodules
-        run: git submodule update --recursive --remote
+        run: git -c protocol.file.allow=always submodule update --init --recursive --remote
 
       - name: Print changes
         run: git status

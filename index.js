@@ -85,7 +85,7 @@ for (const dotGitmodule of dotGitmodules) {
       ? `git -c protocol.file.allow=always submodule add ${dotGitmodule.url} ${dotGitmodule.path}`
       : `git submodule add ${dotGitmodule.url}`
       ;
-    const stderr = await runCommand(command, true);
+    const stderr = await runCommand(command, 'stderr');
 
     // TODO: Interleave the expected directory name /${dotGitmodule.name} here
     assert.match(stderr, /^Cloning into '.*?'...\ndone.\n$/);
