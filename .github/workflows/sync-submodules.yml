@@ -24,8 +24,8 @@ jobs:
           # Configure Git for the push from the workflow to the repository
           # (This is needed even with the workflow PAT)
           # These credentials will make the commit associate with the GitHub Actions service account
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git config --global user.name "github-actions[bot]"
+          git config --global user.email "tomas@hubelbauer.net"
+          git config --global user.name "Tomas Hubelbauer"
 
       - name: Stage the changes resulting from the above steps
         run: git add *
