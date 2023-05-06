@@ -11,4 +11,7 @@ jobs:
           ref: main
 
       - name: Run the script
-        run: node --test
+        run: |
+          node --test --test-name-pattern="add"
+          node --test --test-name-pattern="remove"
+          node --test --test-name-pattern="clone"

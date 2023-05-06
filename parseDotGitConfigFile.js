@@ -41,7 +41,6 @@ export default async function* parseDotGitConfigFile() {
       continue;
     }
     else {
-      console.log(JSON.stringify({ line }))
       throw new Error(`Unexpected line in .git/config: ${line}`);
     }
   }

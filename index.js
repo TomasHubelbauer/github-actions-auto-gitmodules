@@ -27,7 +27,9 @@ for (const gitLsFile of gitLsFiles) {
   const dotGitmodule = dotGitmodules.find(dotGitmodule => dotGitmodule.path === gitLsFile);
   if (!dotGitmodule) {
     const stdout = await runCommand(`git rm --cached ${gitLsFile}`);
-    console.log(`Removed submodule ${gitLsFile} from index because it is not in .gitmodules: ${stdout}`);
+    if (process.env.CI) {
+      console.log(`Removed submodule ${gitLsFile} from index because it is not in .gitmodules: ${stdout}`);
+    }
   }
 }
 
@@ -51,7 +53,9 @@ for (const dotGitModule of dotGitModules) {
   const dotGitmodule = dotGitmodules.find(dotGitmodule => dotGitmodule.path === dotGitModule);
   if (!dotGitmodule) {
     await fs.promises.rm(`.git/modules/${dotGitModule}`, { recursive: true });
-    console.log(`Removed submodule ${dotGitModule} from .git/modules because it is not in .gitmodules.`);
+    if (process.env.CI) {
+      console.log(`Removed submodule ${dotGitModule} from .git/modules because it is not in .gitmodules.`);
+    }
   }
 }
 
@@ -60,7 +64,9 @@ for (const { name } of dotGitConfig) {
   const dotGitmodule = dotGitmodules.find(dotGitmodule => dotGitmodule.name === name);
   if (!dotGitmodule) {
     const stdout = await runCommand(`git config --remove-section submodule.${name}`);
-    console.log(`Removed submodule ${name} from .git/config because it is not in .gitmodules: ${stdout}`);
+    if (process.env.CI) {
+      console.log(`Removed submodule ${name} from .git/config because it is not in .gitmodules: ${stdout}`);
+    }
   }
 }
 
@@ -89,9 +95,11 @@ for (const dotGitmodule of dotGitmodules) {
   }
 
   const dotGitConfig = await drainAsyncGenerator(parseDotGitConfigFile());
-  console.log('.git/config:');
-  for (const { name, url, active } of dotGitConfig) {
-    console.log(`\t${name}: ${url} (${active ? 'active' : 'inactive'})`);
+  if (process.env.CI) {
+    console.log('.git/config:');
+    for (const { name, url, active } of dotGitConfig) {
+      console.log(`\t${name}: ${url} (${active ? 'active' : 'inactive'})`);
+    }
   }
 
   if (!dotGitConfig.find(dotGitConfig => dotGitConfig.name === dotGitmodule.name)) {

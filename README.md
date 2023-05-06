@@ -7,7 +7,10 @@ Here is the documentation: https://git-scm.com/book/en/v2/Git-Tools-Submodules
 
 ## Tests
 
-`node --test`
+`node --test --test-name-pattern=…`
+
+See the task about fixing them not being able to run all at once which prevents
+`node --test` from working as expected.
 
 ## Adding a submodule
 
@@ -130,3 +133,23 @@ step now:
 > Warning: The `set-output` command is deprecated and will be disabled soon.
 > Please upgrade to using Environment Files. For more information see:
 > https://github.blog/changelog/2022-10-11-github-actions-deprecating-save-state-and-set-output-commands/
+
+### Fix the tests not being able to run in parallel for some reason
+
+The assertions fail if the tests are allowed to run all at one.
+I am not sure if the Node test runner is running them in parallel - I do not
+think that is the case, but I couldn't get a straight word out of the Node test
+runner documentation.
+The closest to any mention of whether the tests run in parallel or sequentially
+is this excerpt but that's related to the order in which the test runner reports
+the results:
+
+> Once a test function finishes executing, the results are reported as quickly
+> as possible while maintaining the order of the tests.
+
+https://nodejs.org/api/test.html#extraneous-asynchronous-activity
+
+Maybe the file system operations lag a little bit and there needs to be a delay
+between the tests or what.
+
+For now I run them one by one.
