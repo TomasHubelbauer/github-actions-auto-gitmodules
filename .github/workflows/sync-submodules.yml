@@ -7,7 +7,7 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@main
         with:
-          # Note that `submodules: recursive` would file if added to `.gitmoodules` by hand
+          # Note that `submodules: recursive` would fail if added to `.gitmoodules` by hand
           ref: main
 
       - name: Run the script
@@ -15,10 +15,10 @@ jobs:
 
       - name: Sync submodules
         run: git submodule update --recursive --remote
-      
+
       - name: Print changes
         run: git status
-      
+
       - name: Commit and push the change to the GitHub repository from the agent
         run: |
           # Configure Git for the push from the workflow to the repository
