@@ -97,7 +97,9 @@ test('add submodule', async () => {
 
   // Commit the README
   assert.match(
-    await runCommand('git commit -m "Add a README" -m "The README is here to make the submodule non-empty"'),
+    // Note that `user.name` and `user.email` are there for GitHub Actions where
+    // there is no Git identity set up by default and are not needed locally
+    await runCommand('git -c user.name="Tomas Hubelbauer" -c user.email="tomas@hubelbauer.net" commit -m "Add a README" -m "The README is here to make the submodule non-empty"'),
     /^\[main \(root-commit\) \w{7}\] Add a README\n 1 file changed, 1 insertion\(\+\)\n create mode 100644 README.md\n$/
   );
 
