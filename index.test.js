@@ -317,7 +317,6 @@ test('clone with submodules', async () => {
 
   assert.match(
     await runCommand('git -c protocol.file.allow=always submodule update --init --recursive --remote', 'stdio'),
-    // Submodule path 'sub': checked out '011103a25a48cb9400d45f3415aeb4949b6f8e3c'\n\nSubmodule 'sub' (/Users/tom/Desktop/github-actions-auto-gitmodules/sub) registered for path 'sub'\nCloning into '/Users/tom/Desktop/github-actions-auto-gitmodules/super/sub'...\ndone.\n
     /^Submodule path 'sub': checked out '\w{40}'\n\nSubmodule 'sub' \(.*?\/sub\) registered for path 'sub'\nCloning into '.*?\/sub'...\ndone.\n$/
   );
 
