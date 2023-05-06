@@ -1,21 +1,25 @@
 import fs from 'fs';
 import drainAsyncGenerator from './drainAsyncGenerator.js';
 import parseDotGitmodulesFile from './parseDotGitmodulesFile.js';
+import parseGitLsFilesCommand from './parseGitLsFilesCommand.js';
 import parseDotGitModulesDirectory from './parseDotGitModulesDirectory.js';
 import parseDotGitConfigFile from './parseDotGitConfigFile.js';
-import parseGitLsFilesCommand from './parseGitLsFilesCommand.js';
 import runCommand from './runCommand.js';
+import assert from 'node:assert/strict';
 
 const dotGitmodules = await drainAsyncGenerator(parseDotGitmodulesFile());
-console.log('.gitmodules:');
-for (const { name, path, url } of dotGitmodules) {
-  console.log(`\t${name} (${path}): ${url}`);
-}
-
 const gitLsFiles = await drainAsyncGenerator(parseGitLsFilesCommand());
-console.log('git ls-files:');
-for (const path of gitLsFiles) {
-  console.log(`\t${path}`);
+
+if (process.env.CI) {
+  console.log('.gitmodules:');
+  for (const { name, path, url } of dotGitmodules) {
+    console.log(`\t${name} (${path}): ${url}`);
+  }
+
+  console.log('git ls-files:');
+  for (const path of gitLsFiles) {
+    console.log(`\t${path}`);
+  }
 }
 
 // Remove submodule directories removed from `.gitmodules` but not by the Git command
@@ -28,9 +32,18 @@ for (const gitLsFile of gitLsFiles) {
 }
 
 const dotGitModules = await drainAsyncGenerator(parseDotGitModulesDirectory());
-console.log('.git/modules:');
-for (const path of dotGitModules) {
-  console.log(`\t${path}`);
+const dotGitConfig = await drainAsyncGenerator(parseDotGitConfigFile());
+
+if (process.env.CI) {
+  console.log('.git/modules:');
+  for (const path of dotGitModules) {
+    console.log(`\t${path}`);
+  }
+
+  console.log('.git/config:');
+  for (const { name, url, active } of dotGitConfig) {
+    console.log(`\t${name}: ${url} (${active ? 'active' : 'inactive'})`);
+  }
 }
 
 // Remove bits of submodules removed from `.gitmodules` but not by the Git command
@@ -40,12 +53,6 @@ for (const dotGitModule of dotGitModules) {
     await fs.promises.rm(`.git/modules/${dotGitModule}`, { recursive: true });
     console.log(`Removed submodule ${dotGitModule} from .git/modules because it is not in .gitmodules.`);
   }
-}
-
-const dotGitConfig = await drainAsyncGenerator(parseDotGitConfigFile());
-console.log('.git/config:');
-for (const { name, url, active } of dotGitConfig) {
-  console.log(`\t${name}: ${url} (${active ? 'active' : 'inactive'})`);
 }
 
 // Remove sections of submodules removed from `.gitmodules` but not by the Git command
@@ -65,8 +72,26 @@ for (const dotGitmodule of dotGitmodules) {
 
   const dotGitModule = dotGitModules.find(dotGitModule => dotGitModule === dotGitmodule.path);
   if (!dotGitModule) {
-    const stdout = await runCommand(`git submodule add ${dotGitmodule.url}`);
-    console.log(`Added submodule ${dotGitmodule.name} to .git/modules because it is not in .git/modules: ${stdout}`);
+    const command = dotGitmodule.url.startsWith('./') || dotGitmodule.url.startsWith('../')
+      // Note that `protocol.file.allow=always` is set to work around CVE-2022-39253
+      // See https://twitter.com/TomasHubelbauer/status/1654844311928729605
+      // TODO: See if I can remove `${dotGitmodule.path}` and leave it implied
+      ? `git -c protocol.file.allow=always submodule add ${dotGitmodule.url} ${dotGitmodule.path}`
+      : `git submodule add ${dotGitmodule.url}`
+      ;
+    const stderr = await runCommand(command, true);
+
+    // TODO: Interleave the expected directory name /${dotGitmodule.name} here
+    assert.match(stderr, /^Cloning into '.*?'...\ndone.\n$/);
+    if (process.env.CI) {
+      console.log(`Added submodule ${dotGitmodule.name} to .git/modules because it is not in .git/modules.`);
+    }
+  }
+
+  const dotGitConfig = await drainAsyncGenerator(parseDotGitConfigFile());
+  console.log('.git/config:');
+  for (const { name, url, active } of dotGitConfig) {
+    console.log(`\t${name}: ${url} (${active ? 'active' : 'inactive'})`);
   }
 
   if (!dotGitConfig.find(dotGitConfig => dotGitConfig.name === dotGitmodule.name)) {
@@ -75,7 +100,10 @@ for (const dotGitmodule of dotGitmodules) {
 
   const { name, url, active } = dotGitConfig.find(dotGitConfig => dotGitConfig.name === dotGitmodule.name);
   if (url !== dotGitmodule.url) {
-    throw new Error(`URL mismatch for submodule ${name}: ${url} !== ${dotGitmodule.url}`);
+    // TODO: Resolve to full paths and do the check for local paths as well
+    if (!dotGitmodule.url.startsWith('./') && !dotGitmodule.url.startsWith('../')) {
+      throw new Error(`URL mismatch for submodule ${name}: ${url} !== ${dotGitmodule.url}`);
+    }
   }
 
   if (!active) {

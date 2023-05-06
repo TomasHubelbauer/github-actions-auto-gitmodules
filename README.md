@@ -5,6 +5,10 @@ It can be used to link another repository as a dependency of the current one.
 
 Here is the documentation: https://git-scm.com/book/en/v2/Git-Tools-Submodules
 
+## Tests
+
+`node --test`
+
 ## Adding a submodule
 
 ```sh
@@ -112,3 +116,8 @@ it doesn't work with private ones and I just never noticed?
 
 Or did I mess something up in it?
 It works for other of my repositories so I need to check it against them.
+
+### Introduce and include `parseGitSubmoduleStatusCommand.js`
+
+I have introduced this check in the test but it should happen in the main script
+when running outside of the script context as well.
