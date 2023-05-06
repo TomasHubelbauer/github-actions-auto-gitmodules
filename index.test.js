@@ -35,7 +35,7 @@ test('add submodule', async () => {
   assert.match(
     // Note that `init.defaultBranch` is there for GitHub Actions where this
     // config doesn't seem to be the default in Git - it is not needed locally
-    await runCommand('git -c init.defaultBranch main init'),
+    await runCommand('git -c init.defaultBranch=main init'),
     /^Initialized empty Git repository in .*?\/super\/.git\/\n$/
   );
 
@@ -82,7 +82,7 @@ test('add submodule', async () => {
   assert.match(
     // Note that `init.defaultBranch` is there for GitHub Actions where this
     // config doesn't seem to be the default in Git - it is not needed locally
-    await runCommand('git -c init.defaultBranch main init'),
+    await runCommand('git -c init.defaultBranch=main init'),
     /^Initialized empty Git repository in .*\/sub\/.git\/\n$/
   );
 
