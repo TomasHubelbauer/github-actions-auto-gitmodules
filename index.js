@@ -88,7 +88,8 @@ for (const dotGitmodule of dotGitmodules) {
     const stderr = await runCommand(command, 'stderr');
 
     // TODO: Interleave the expected directory name /${dotGitmodule.name} here
-    assert.match(stderr, /^Cloning into '.*?'...\ndone.\n$/);
+    // Note that the `done.` part appears in tests but not in real runtime?
+    assert.match(stderr, /^Cloning into '.*?'...\n(done.\n)?$/);
     if (process.env.CI) {
       console.log(`Added submodule ${dotGitmodule.name} to .git/modules because it is not in .git/modules.`);
     }
