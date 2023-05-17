@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-import { test, it } from 'node:test';
+import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import url from 'node:url';
 import path from 'node:path'
