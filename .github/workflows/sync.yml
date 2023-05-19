@@ -1,0 +1,11 @@
+name: sync
+on:
+  push:
+  schedule:
+    - cron: '0 * * * *'
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync .gitmodules changes with Git Modules
+        uses: TomasHubelbauer/github-action-auto-git-modules@main
