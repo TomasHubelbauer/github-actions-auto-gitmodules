@@ -8,5 +8,12 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
+      # TODO: Find out if this can be done in the Action itself if it is needed
+      - name: Check out repository code
+        uses: actions/checkout@main
+        with:
+          # Note that `submodules: recursive` would fail if added to `.gitmoodules` by hand
+          ref: main
+
       - name: Sync .gitmodules changes with Git Modules
         uses: TomasHubelbauer/github-action-auto-git-modules@main
